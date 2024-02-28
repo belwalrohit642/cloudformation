@@ -1,0 +1,35 @@
+Parameters:
+  VpcId:
+    Type: String
+    Description: "ID of the VPC"
+
+  EnvPrefix:
+    Type: String
+    Description: "Environment prefix"
+
+Resources:
+  MyappSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: "myapp-sg"
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: "0.0.0.0/0"
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          CidrIp: "0.0.0.0/0"
+
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${EnvPrefix}-sg"
+
+Outputs:
+  SgDev:
+    Value: !Ref MyappSecurityGroup

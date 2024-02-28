@@ -1,0 +1,134 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  CidrBlock:
+    Type: String
+    Description: "CIDR block for the VPC"
+    Default: "10.0.0.0/16"
+
+  PublicSubnetCidrBlocks:
+    Type: CommaDelimitedList
+    Description: "List of CIDR blocks for public subnets"
+    Default: "10.0.1.0/24,10.0.2.0/24"
+
+  PrivateSubnetCidrBlocks:
+    Type: CommaDelimitedList
+    Description: "List of CIDR blocks for private subnets"
+    Default: "10.0.3.0/24,10.0.4.0/24"
+
+  AvailabilityZones:
+    Type: CommaDelimitedList
+    Description: "List of availability zones"
+    Default: "us-east-1a,us-east-1b"
+
+  EnvPrefix:
+    Type: String
+    Description: "Environment prefix"
+    Default: "dev"
+
+  TotalCount:
+    Type: Number
+    Description: "Total count"
+    Default: '1'
+
+  AmiId:
+    Type: String
+    Description: "AMI ID"
+    Default: "ami-0c7217cdde317cfec"
+
+  InstanceType:
+    Type: String
+    Description: "EC2 instance type"
+    Default: "t2.micro"
+
+  PublicKeyLocation:
+    Type: String
+    Description: "Public key location"
+    Default: "/home/rohit/.ssh/gcp-lesson.pub"
+
+Resources:
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref CidrBlock
+      InstanceTenancy: "default"
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: "Name"
+          Value: "ninja-vpc-01"
+        - Key: "type"
+          Value: "custom"
+
+  MySubnets:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL: "../subnets/subnets.yaml"
+      Parameters:
+        VpcId: !Ref MyVPC
+        PublicSubnetCidrBlocks: !Ref PublicSubnetCidrBlocks
+        PrivateSubnetCidrBlocks: !Ref PrivateSubnetCidrBlocks
+        AvailabilityZones: !Ref AvailabilityZones
+        EnvPrefix: !Ref EnvPrefix
+
+  # MyInternetGateway:
+  #   Type: "AWS::CloudFormation::Stack"
+  #   Properties:
+  #     TemplateURL: "../igw/igw.yaml"
+  #     Parameters:
+  #       VpcId: !Ref MyVPC
+  #       EnvPrefix: !Ref EnvPrefix
+
+  # MyRouteTable:
+  #   Type: "AWS::CloudFormation::Stack"
+  #   Properties:
+  #     TemplateURL: "../routetable/routetable.yaml"
+  #     Parameters:
+  #       VpcId: !Ref MyVPC
+  #       PublicSubnetIds: !GetAtt MySubnets.Outputs.PublicSubnetIds
+  #       PrivateSubnetIds: !GetAtt MySubnets.Outputs.PrivateSubnetIds
+  #       EnvPrefix: !Ref EnvPrefix
+  #       MyInternetGateway: !GetAtt MyInternetGateway.Outputs.MyInternetGateway
+
+  # MyInstances:
+  #   Type: "AWS::CloudFormation::Stack"
+  #   Properties:
+  #     TemplateURL: "../ec2/ec2.yaml"
+  #     Parameters:
+  #       PublicSubnetIds: !GetAtt MySubnets.Outputs.PublicSubnetIds
+  #       PrivateSubnetIds: !GetAtt MySubnets.Outputs.PrivateSubnetIds
+  #       AmiId: !Ref AmiId
+  #       InstanceType: !Ref InstanceType
+  #       PublicKeyLocation: !Ref PublicKeyLocation
+
+  # MySecurityGroupsDev:
+  #   Type: "AWS::CloudFormation::Stack"
+  #   Properties:
+  #     TemplateURL: "../sg/sg.yaml"
+  #     Parameters:
+  #       VpcId: !Ref MyVPC
+  #       EnvPrefix: !Ref EnvPrefix
+
+Outputs:
+  VpcId:
+    Description: "The ID of the VPC"
+    Value: !Ref MyVPC
+
+  # MyPublicSubnetIds:
+  #   Value: !GetAtt MySubnets.Outputs.PublicSubnetIds
+
+  # MyPrivateSubnetIds:
+  #   Value: !GetAtt MySubnets.Outputs.PrivateSubnetIds
+
+  # MyInternetGateway:
+  #   Value: !GetAtt MyInternetGateway.Outputs.MyInternetGateway
+
+  # PubInstanceIp:
+  #   Value: !GetAtt MyInstances.Outputs.PublicInstanceIp
+
+  # PrivInstanceIp:
+  #   Value: !GetAtt MyInstances.Outputs.PrivateInstanceIp
+
+  # MySecurityGroups:
+  #   Value: !GetAtt MySecurityGroupsDev.Outputs.SgDev
+  

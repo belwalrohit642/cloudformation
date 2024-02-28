@@ -1,0 +1,93 @@
+Parameters:
+  VpcId:
+    Type: String
+    Description: "ID of the VPC"
+
+  EnvPrefix:
+    Type: String
+    Description: "Environment prefix"
+
+  PublicSubnetIds:
+    Type: List<String>
+    Default: []
+
+  PrivateSubnetIds:
+    Type: List<String>
+    Default: []
+
+  MyInternetGateway:
+    Type: String
+    Description: "Internet Gateway ID"
+
+Resources:
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VpcId
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${EnvPrefix}-pub-rtb"
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: PublicRouteTable
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref MyInternetGateway
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VpcId
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${EnvPrefix}-prv-rtb"
+
+  PublicRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Select [0, !Ref PublicSubnetIds]
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Select [0, !Ref PrivateSubnetIds]
+      RouteTableId: !Ref PrivateRouteTable
+
+  NatGatewayEIP:
+    Type: AWS::EC2::EIP
+    Condition: NatGatewayCondition
+    Properties:
+      Domain: vpc
+
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    DependsOn: NatGatewayEIP
+    Condition: NatGatewayCondition
+    Properties:
+      SubnetId: !Select [1, !Ref PublicSubnetIds]
+      AllocationId: !GetAtt NatGatewayEIP.AllocationId
+
+  PrivateRoute:
+    Type: AWS::EC2::Route
+    DependsOn: NatGateway
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      NatGatewayId: !Ref NatGateway
+
+Conditions:
+  NatGatewayCondition:
+    Fn::Not:
+      - Fn::Equals:
+          - !Ref MyInternetGateway
+          - "0"  # If MyInternetGateway is not provided, use NAT Gateway
+
+Outputs:
+  PublicRouteTableId:
+    Value: !Ref PublicRouteTable
+
+  PrivateRouteTableId:
+    Value: !Ref PrivateRouteTable

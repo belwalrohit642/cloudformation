@@ -1,0 +1,52 @@
+Parameters:
+  VpcId:
+    Type: String
+    Description: "ID of the VPC"
+
+  PublicSubnetCidrBlocks:
+    Type: CommaDelimitedList
+    Description: "List of CIDR blocks for public subnets"
+
+  PrivateSubnetCidrBlocks:
+    Type: CommaDelimitedList
+    Description: "List of CIDR blocks for private subnets"
+
+  AvailabilityZones:
+    Type: CommaDelimitedList
+    Description: "List of availability zones"
+    Default: "us-east-1a,us-east-1b"
+
+  EnvPrefix:
+    Type: String
+    Description: "Environment prefix"
+
+Resources:
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      CidrBlock: !Select [0, !Ref PublicSubnetCidrBlocks]
+      AvailabilityZone: !Select [0, !Ref AvailabilityZones]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: "Name"
+          Value: !Sub "PublicSubnet-${EnvPrefix}-${AvailabilityZones[0]}"
+
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      CidrBlock: !Select [0, !Ref PrivateSubnetCidrBlocks]
+      AvailabilityZone: !Select [0, !Ref AvailabilityZones]
+      Tags:
+        - Key: "Name"
+          Value: !Sub "PrivateSubnet-${EnvPrefix}-${AvailabilityZones[0]}"
+
+Outputs:
+  PublicSubnetIds:
+    Value: 
+      - !Ref PublicSubnet
+
+  PrivateSubnetIds:
+    Value: 
+      - !Ref PrivateSubnet

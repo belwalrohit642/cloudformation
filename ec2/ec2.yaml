@@ -1,0 +1,99 @@
+Parameters:
+  InstanceName:
+    Type: String
+    Description: "Name of instance"
+    Default: ""
+
+  PublicIP:
+    Type: Boolean
+    Description: "Enable for public IP"
+    Default: false
+
+  Tags:
+    Type: Map<String>
+    Description: "Additional tags"
+    Default: {}
+
+  SubnetIds:
+    Type: List<String>
+    Description: "Define subnet"
+    Default: []
+
+  AmiId:
+    Type: String
+    Description: "Define AMI ID"
+    Default: ""
+
+  KeyName:
+    Type: String
+    Description: "Key name of Launch instance"
+    Default: ""
+
+  InstanceType:
+    Type: String
+    Description: "Define instance type, e.g., t2.large"
+    Default: ""
+
+  AssociateEBS:
+    Type: Boolean
+    Description: "Set this to true when you want to use another EBS apart from root"
+    Default: false
+
+  PublicKeyLocation:
+    Type: String
+
+  PublicSubnetIds:
+    Type: List<String>
+
+  PrivateSubnetIds:
+    Type: List<String>
+
+  SecurityGroups:
+    Type: String
+
+Resources:
+  KeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: "server-key"
+      PublicKey: !Sub ${PublicKeyLocation}
+
+  PublicInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyPair
+      NetworkInterfaces:
+        - SubnetId: !Select [0, !Ref PublicSubnetIds]
+          AssociatePublicIpAddress: !Ref PublicIP
+          DeviceIndex: 0
+      Tags:
+        - Key: "Name"
+          Value: !Sub ${InstanceName}
+        - Key: !Sub ${Tags.Key1}
+          Value: !Sub ${Tags.Value1}
+        # Add more tags as needed
+
+  PrivateInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyPair
+      NetworkInterfaces:
+        - SubnetId: !Select [0, !Ref PrivateSubnetIds]
+          DeviceIndex: 0
+      Tags:
+        - Key: "Name"
+          Value: !Sub ${InstanceName}
+        - Key: !Sub ${Tags.Key2}
+          Value: !Sub ${Tags.Value2}
+        # Add more tags as needed
+
+Outputs:
+  PublicInstanceIP:
+    Value: !GetAtt PublicInstance.PublicIp
+
+  PrivateInstanceIP:
+    Value: !GetAtt PrivateInstance.PrivateIp

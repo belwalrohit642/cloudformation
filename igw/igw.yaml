@@ -1,0 +1,26 @@
+Parameters:
+  VpcId:
+    Type: String
+    Description: "ID of the VPC"
+
+  EnvPrefix:
+    Type: String
+    Description: "Environment prefix"
+
+Resources:
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${EnvPrefix}-igw"
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VpcId
+      InternetGatewayId: !Ref InternetGateway
+
+Outputs:
+  MyInternetGateway:
+    Value: !Ref InternetGateway
